@@ -618,14 +618,50 @@ local function LoadVxnityHub()
     })
 
     ReactTab:Button({
-        Title = "wayz react",
-        Desc = "best player react",
-        Callback = function()
-            currentReactPower = 1000
-            enableReactHook()
-            WindUI:Notify({ Title = "React Active", Desc = "wayz react  enabled", Icon = "zap" })
-        end
-    })
+Title = "kenyah the goat",
+Desc = "reach best player",
+Callback = function()
+
+currentReactPower = 999999
+reactRange = 25
+reactUpdateRate = 0
+reactStickiness = 1
+reactPrediction = true
+reactForceTouch = true
+reactNoMiss = true
+
+enableReactHook = function()
+local RunService = game:GetService("RunService")
+local player = game.Players.LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
+local hrp = char:WaitForChild("HumanoidRootPart")
+
+RunService.Heartbeat:Connect(function()
+for _,v in pairs(workspace:GetDescendants()) do
+if v:IsA("BasePart") and v.Name == "Ball" then
+local dist = (v.Position - hrp.Position).Magnitude
+if dist <= reactRange then
+v.Velocity = Vector3.zero
+v.AssemblyLinearVelocity = Vector3.zero
+v.CFrame = hrp.CFrame * CFrame.new(0,0,-1)
+firetouchinterest(hrp, v, 0)
+firetouchinterest(hrp, v, 1)
+end
+end
+end
+end)
+end
+
+enableReactHook()
+
+WindUI:Notify({
+Title = "React Active",
+Desc = "kenyah enabled",
+Icon = "zap"
+})
+
+end
+})
 
     ReactTab:Button({
         Title = "Goalkeeper React",

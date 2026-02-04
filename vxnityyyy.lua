@@ -21,172 +21,67 @@ local function ShowSystemLoader(onFinished)
     local ScreenGui = Instance.new("ScreenGui")
     ScreenGui.Name = "vxnitySystemLoader"
     ScreenGui.IgnoreGuiInset = true
-    
-    local success, coreGui = pcall(function() return game:GetService("CoreGui") end)
-    ScreenGui.Parent = (success and coreGui) or LocalPlayer:WaitForChild("PlayerGui")
+    ScreenGui.ResetOnSpawn = false
 
-    -- Background Blur
-    local Blur = Instance.new("BlurEffect")
-    Blur.Size = 0
-    Blur.Parent = Lighting
-    TweenService:Create(Blur, TweenInfo.new(1), {Size = 15}):Play()
-
-    local MainFrame = Instance.new("Frame")
-    MainFrame.Size = UDim2.new(0, 420, 0, 240)
-    MainFrame.Position = UDim2.new(0.5, -210, 0.5, -120)
-    MainFrame.BackgroundColor3 = Color3.fromHex("#080808")
-    MainFrame.BorderSizePixel = 0
-    MainFrame.ClipsDescendants = true
-    MainFrame.BackgroundTransparency = 1
-    MainFrame.Parent = ScreenGui
-
-    local UICorner = Instance.new("UICorner")
-    UICorner.CornerRadius = UDim.new(0, 16)
-    UICorner.Parent = MainFrame
-
-    local UIStroke = Instance.new("UIStroke")
-    UIStroke.Color = Color3.fromHex("#9d56ff")
-    UIStroke.Thickness = 2.5
-    UIStroke.Transparency = 1
-    UIStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-    UIStroke.Parent = MainFrame
-
-    -- Soft Glow behind frame
-    local Glow = Instance.new("ImageLabel")
-    Glow.Name = "Glow"
-    Glow.BackgroundTransparency = 1
-    Glow.Position = UDim2.new(0, -50, 0, -50)
-    Glow.Size = UDim2.new(1, 100, 1, 100)
-    Glow.Image = "rbxassetid://6015667343"
-    Glow.ImageColor3 = Color3.fromHex("#9d56ff")
-    Glow.ImageTransparency = 1
-    Glow.Parent = MainFrame
-
-    local Title = Instance.new("TextLabel")
-    Title.Size = UDim2.new(1, 0, 0, 60)
-    Title.Position = UDim2.new(0, 0, 0.2, 0)
-    Title.BackgroundTransparency = 1
-    Title.Text = "vxnity hub"
-    Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-    Title.TextSize = 46
-    Title.Font = Enum.Font.GothamBold
-    Title.TextTransparency = 1
-    Title.Parent = MainFrame
-
-    local TitleGradient = Instance.new("UIGradient")
-    TitleGradient.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, Color3.fromHex("#ffffff")),
-        ColorSequenceKeypoint.new(1, Color3.fromHex("#9d56ff"))
-    })
-    TitleGradient.Parent = Title
-
-    local SubTitle = Instance.new("TextLabel")
-    SubTitle.Size = UDim2.new(1, 0, 0, 20)
-    SubTitle.Position = UDim2.new(0, 0, 0.45, 0)
-    SubTitle.BackgroundTransparency = 1
-    SubTitle.Text = "PREMIUM EXECUTION SYSTEM"
-    SubTitle.TextColor3 = Color3.fromHex("#9d56ff")
-    SubTitle.TextSize = 13
-    SubTitle.Font = Enum.Font.GothamBold
-    SubTitle.TextTransparency = 1
-    SubTitle.Parent = MainFrame
-
-    local Status = Instance.new("TextLabel")
-    Status.Size = UDim2.new(1, 0, 0, 30)
-    Status.Position = UDim2.new(0, 0, 0.8, 0)
-    Status.BackgroundTransparency = 1
-    Status.Text = "Initializing..."
-    Status.TextColor3 = Color3.fromHex("#aaaaaa")
-    Status.TextSize = 14
-    Status.Font = Enum.Font.Gotham
-    Status.TextTransparency = 1
-    Status.Parent = MainFrame
-
-    local BarBack = Instance.new("Frame")
-    BarBack.Size = UDim2.new(0.7, 0, 0, 4)
-    BarBack.Position = UDim2.new(0.15, 0, 0.72, 0)
-    BarBack.BackgroundColor3 = Color3.fromHex("#1a1a1a")
-    BarBack.BorderSizePixel = 0
-    BarBack.BackgroundTransparency = 1
-    BarBack.Parent = MainFrame
-
-    local BarBackCorner = Instance.new("UICorner")
-    BarBackCorner.CornerRadius = UDim.new(1, 0)
-    BarBackCorner.Parent = BarBack
-
-    local BarFill = Instance.new("Frame")
-    BarFill.Size = UDim2.new(0, 0, 1, 0)
-    BarFill.BackgroundColor3 = Color3.fromHex("#9d56ff")
-    BarFill.BorderSizePixel = 0
-    BarFill.Parent = BarBack
-
-    local BarFillCorner = Instance.new("UICorner")
-    BarFillCorner.CornerRadius = UDim.new(1, 0)
-    BarFillCorner.Parent = BarFill
-
-    local BarGlow = Instance.new("ImageLabel")
-    BarGlow.BackgroundTransparency = 1
-    BarGlow.Position = UDim2.new(0, -10, 0, -10)
-    BarGlow.Size = UDim2.new(1, 20, 1, 20)
-    BarGlow.Image = "rbxassetid://6015667343"
-    BarGlow.ImageColor3 = Color3.fromHex("#9d56ff")
-    BarGlow.ImageTransparency = 0.4
-    BarGlow.Parent = BarFill
-
-    -- Entrance Animation
-    TweenService:Create(MainFrame, TweenInfo.new(0.8, Enum.EasingStyle.Quart), {BackgroundTransparency = 0}):Play()
-    TweenService:Create(UIStroke, TweenInfo.new(0.8, Enum.EasingStyle.Quart), {Transparency = 0}):Play()
-    TweenService:Create(Glow, TweenInfo.new(1.2, Enum.EasingStyle.Quart), {ImageTransparency = 0.7}):Play()
-    TweenService:Create(Title, TweenInfo.new(0.8, Enum.EasingStyle.Quart, Enum.EasingDirection.Out, 0, false, 0.2), {TextTransparency = 0}):Play()
-    TweenService:Create(SubTitle, TweenInfo.new(0.8, Enum.EasingStyle.Quart, Enum.EasingDirection.Out, 0, false, 0.4), {TextTransparency = 0.3}):Play()
-    TweenService:Create(Status, TweenInfo.new(0.8, Enum.EasingStyle.Quart, Enum.EasingDirection.Out, 0, false, 0.6), {TextTransparency = 0}):Play()
-    TweenService:Create(BarBack, TweenInfo.new(0.8, Enum.EasingStyle.Quart, Enum.EasingDirection.Out, 0, false, 0.6), {BackgroundTransparency = 0}):Play()
-
-    -- Loading Logic
-    task.spawn(function()
-        local steps = {
-            {0.15, "Authenticating session..."},
-            {0.35, "Syncing vxnity cloud..."},
-            {0.60, "Bypassing game integrity..."},
-            {0.85, "Optimizing UI components..."},
-            {1.0, "Ready to execute"}
-        }
-        
-        task.wait(1)
-        for _, step in ipairs(steps) do
-            Status.Text = step[2]
-            local tween = TweenService:Create(BarFill, TweenInfo.new(0.6, Enum.EasingStyle.Exponential), {Size = UDim2.new(step[1], 0, 1, 0)})
-            tween:Play()
-            task.wait(0.8)
-        end
-        
-        task.wait(0.5)
-        
-        -- Exit Animation
-        TweenService:Create(Blur, TweenInfo.new(0.6), {Size = 0}):Play()
-        local exitTween = TweenService:Create(MainFrame, TweenInfo.new(0.6, Enum.EasingStyle.Quart), {
-            Size = UDim2.new(0, 440, 0, 0),
-            Position = UDim2.new(0.5, -220, 0.5, 0)
-        })
-        
-        for _, v in pairs(MainFrame:GetDescendants()) do
-            if v:IsA("TextLabel") then
-                TweenService:Create(v, TweenInfo.new(0.4), {TextTransparency = 1}):Play()
-            elseif v:IsA("Frame") or v:IsA("UIStroke") or v:IsA("ImageLabel") then
-                local prop = v:IsA("ImageLabel") and "ImageTransparency" or (v:IsA("UIStroke") and "Transparency" or "BackgroundTransparency")
-                TweenService:Create(v, TweenInfo.new(0.4), {[prop] = 1}):Play()
-            end
-        end
-        
-        exitTween:Play()
-        exitTween.Completed:Wait()
-        
-        Blur:Destroy()
-        ScreenGui:Destroy()
-        if onFinished then
-            onFinished()
-        end
+    local ok, coreGui = pcall(function()
+        return game:GetService("CoreGui")
     end)
+    ScreenGui.Parent = ok and coreGui or LocalPlayer:WaitForChild("PlayerGui")
+
+    local bg = Instance.new("Frame")
+    bg.Size = UDim2.new(1, 0, 1, 0)
+    bg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    bg.BackgroundTransparency = 0
+    bg.Parent = ScreenGui
+
+    local title = Instance.new("TextLabel")
+    title.Size = UDim2.new(1, 0, 0.2, 0)
+    title.Position = UDim2.new(0, 0, 0.4, 0)
+    title.BackgroundTransparency = 1
+    title.Text = "VXNITY"
+    title.TextColor3 = Color3.fromRGB(255, 255, 255)
+    title.Font = Enum.Font.GothamBold
+    title.TextScaled = true
+    title.TextTransparency = 1
+    title.Parent = bg
+
+    local subtitle = Instance.new("TextLabel")
+    subtitle.Size = UDim2.new(1, 0, 0.08, 0)
+    subtitle.Position = UDim2.new(0, 0, 0.55, 0)
+    subtitle.BackgroundTransparency = 1
+    subtitle.TextColor3 = Color3.fromRGB(180, 180, 180)
+    subtitle.Font = Enum.Font.Gotham
+    subtitle.TextScaled = true
+    subtitle.TextTransparency = 1
+    subtitle.Parent = bg
+
+    TweenService:Create(title, TweenInfo.new(0.5), {TextTransparency = 0}):Play()
+    task.wait(0.3)
+
+    local steps = {
+        "Initializing",
+        "Loading modules",
+        "Syncing systems",
+        "Ready"
+    }
+
+    for _, text in ipairs(steps) do
+        subtitle.Text = text
+        TweenService:Create(subtitle, TweenInfo.new(0.25), {TextTransparency = 0}):Play()
+        task.wait(0.6)
+        TweenService:Create(subtitle, TweenInfo.new(0.25), {TextTransparency = 1}):Play()
+        task.wait(0.15)
+    end
+
+    TweenService:Create(bg, TweenInfo.new(0.4), {BackgroundTransparency = 1}):Play()
+    TweenService:Create(title, TweenInfo.new(0.3), {TextTransparency = 1}):Play()
+
+    task.wait(0.5)
+    ScreenGui:Destroy()
+
+    if onFinished then
+        onFinished()
+    end
 end
 
 -- Security/Clean

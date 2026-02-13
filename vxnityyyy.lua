@@ -722,17 +722,20 @@ RunService.RenderStepped:Connect(function()
 
         if humanoid and ball then
             
-            ball.Position = playerChar.PrimaryPart.Position + Vector3.new(0, 2, 0)
+            local targetPosition = playerChar.PrimaryPart.Position + Vector3.new(0, -1.5, 0) 
+            ball.Position = targetPosition
 
             
-            local targetPosition = playerChar.PrimaryPart.Position + Vector3.new(0, 2, 0)
-            ball.Velocity = (targetPosition - ball.Position).unit * 4000
+            ball.Velocity = Vector3.new(0, 0, 0) 
 
-            
-            ball.CFrame = CFrame.new(ball.Position, playerChar.PrimaryPart.Position)
+            local moveDirection = humanoid.MoveDirection
+            if moveDirection ~= Vector3.new(0, 0, 0) then
+                ball.CFrame = CFrame.new(ball.Position, ball.Position + moveDirection)
+            end
         end
     end
 end)
+
 
 
     local isAimbotEnabled = false

@@ -722,19 +722,33 @@ RunService.RenderStepped:Connect(function()
 
         if humanoid and ball then
             
-            local targetPosition = playerChar.PrimaryPart.Position + Vector3.new(0, -1.5, 0) 
-            ball.Position = targetPosition
-
             
-            ball.Velocity = Vector3.new(0, 0, 0) 
 
-            local moveDirection = humanoid.MoveDirection
-            if moveDirection ~= Vector3.new(0, 0, 0) then
-                ball.CFrame = CFrame.new(ball.Position, ball.Position + moveDirection)
+            -- Mueve al personaje hacia el balón de manera agresiva
+            humanoid:MoveTo(ball.Position)
+
+        
+            local ballHeight = ball.Position.Y
+            local charHeight = playerChar.PrimaryPart.Position.Y
+            if math.abs(ballHeight - charHeight) > 1 then
+                local newPosition = playerChar.PrimaryPart.Position
+                newPosition = Vector3.new(newPosition.X, ballHeight, newPosition.Z)
+                playerChar:SetPrimaryPartCFrame(CFrame.new(newPosition, playerChar.PrimaryPart.Position + lookVec))
             end
+
+            -- Simula toques al balón para contar todos los toques
+            local touch = Instance.new("TouchInterest")
+            touch.Parent = ball
+            touch.Touched:Connect(function(hit)
+                if hit.Parent == playerChar then
+                    -- Aquí puedes agregar lógica para contar los toques o aplicar efectos visuales
+                    print("Toque contado")
+                end
+            end)
         end
     end
 end)
+
 
 
 

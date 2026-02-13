@@ -696,7 +696,7 @@ local function LoadVxnityHub()
 
     HelpersTab:Section({ Title = "Automation" })
 
-    local followBall = false
+    local followBall = True
     local toggleEnabled = false
 
     HelpersTab:Toggle({

@@ -696,32 +696,44 @@ local function LoadVxnityHub()
 
     HelpersTab:Section({ Title = "Automation" })
 
-    local followBall = True
-    local toggleEnabled = false
+    local followBall = true
+local toggleEnabled = false
 
-    HelpersTab:Toggle({
-        Title = "inf helper",
-        Desc = "Character will move towards the ball automatically",
-        Callback = function(state)
-            toggleEnabled = state
-            if not state then followBall = false end
-        end
-    })
+HelpersTab:Toggle({
+    Title = "inf helper",
+    Desc = "Character will move towards the ball automatically",
+    Callback = function(state)
+        toggleEnabled = state
+        if not state then followBall = false end
+    end
+})
 
-    UserInputService.InputBegan:Connect(function(input, gp)
-        if input.KeyCode == Enum.KeyCode.B and not gp and toggleEnabled then
-            followBall = not followBall
-        end
-    end)
+UserInputService.InputBegan:Connect(function(input, gp)
+    if input.KeyCode == Enum.KeyCode.B and not gp and toggleEnabled then
+        followBall = not followBall
+    end
+end)
 
-    RunService.RenderStepped:Connect(function()
-        if followBall and toggleEnabled then
-            local ball = Workspace.TPSSystem.TPS
-            if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-                LocalPlayer.Character.Humanoid:MoveTo(ball.Position)
-            end
+RunService.RenderStepped:Connect(function()
+    if followBall and toggleEnabled then
+        local ball = Workspace.TPSSystem.TPS
+        local playerChar = LocalPlayer.Character
+        local humanoid = playerChar and playerChar:FindFirstChild("Humanoid")
+
+        if humanoid and ball then
+            
+            ball.Position = playerChar.PrimaryPart.Position + Vector3.new(0, 2, 0)
+
+            
+            local targetPosition = playerChar.PrimaryPart.Position + Vector3.new(0, 2, 0)
+            ball.Velocity = (targetPosition - ball.Position).unit * 4000
+
+            
+            ball.CFrame = CFrame.new(ball.Position, playerChar.PrimaryPart.Position)
         end
-    end)
+    end
+end)
+
 
     local isAimbotEnabled = false
     local aimbotTargetPos = Vector3.new(0, 14, 157)

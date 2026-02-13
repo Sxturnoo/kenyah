@@ -513,17 +513,39 @@ local function LoadVxnityHub()
     })
 
     ReactTab:Button({
-    Title = "Kenyah React",
-    Desc = "WW Reactt",
+    Title = "kenyah the goat",
+    Desc = "reach best player",
     Callback = function()
 
-        currentReactPower = 999999
+        currentReactPower = 99999999999999
         reactRange = 25
-        reactUpdateRate = 0.1 --  reducir la carga de cpu
-        reactStickiness = 99
+        reactUpdateRate = 0.1 
+        reactStickiness = 1
         reactPrediction = true
         reactForceTouch = true
         reactNoMiss = true
+
+        -- limitar el uso de la CPU
+        local function limitCPUUsage(targetPercentage)
+            local targetUsage = targetPercentage / 100
+            local function getCPUUsage()
+                
+                return 0 
+            end
+
+            while true do
+                local currentUsage = getCPUUsage()
+                if currentUsage > targetUsage then
+                    
+                    wait(0.1) 
+                else
+                    wait(0.01) 
+                end
+            end
+        end
+
+        -- 5%
+        coroutine.wrap(limitCPUUsage)(4)
 
         enableReactHook = function()
             local RunService = game:GetService("RunService")

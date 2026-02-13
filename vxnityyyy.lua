@@ -513,14 +513,14 @@ local function LoadVxnityHub()
     })
 
     ReactTab:Button({
-    Title = "kenyah react",
-    Desc = " W react",
+    Title = "Kenyah React",
+    Desc = "WW Reactt",
     Callback = function()
 
-        currentReactPower = 999999 -- velocity
+        currentReactPower = 999999
         reactRange = 25
-        reactUpdateRate = 0.01 -- mejorar rendimiento 
-        reactStickiness = 1
+        reactUpdateRate = 0.1 --  reducir la carga de cpu
+        reactStickiness = 99
         reactPrediction = true
         reactForceTouch = true
         reactNoMiss = true
@@ -550,14 +550,30 @@ local function LoadVxnityHub()
                 return closestBall, closestDistance
             end
 
+            local lastBall = nil
+            local lastDistance = math.huge
+
             RunService.Heartbeat:Connect(function()
-                local ball, dist = getClosestBall()
-                if ball and dist <= reactRange then
-                    ball.Velocity = Vector3.zero
-                    ball.AssemblyLinearVelocity = Vector3.zero
-                    ball.CFrame = hrp.CFrame * CFrame.new(0, 0, -1)
-                    firetouchinterest(hrp, ball, 0)
-                    firetouchinterest(hrp, ball, 1)
+                if lastDistance <= reactRange then
+                    local ball = lastBall
+                    if ball then
+                        ball.Velocity = Vector3.zero
+                        ball.AssemblyLinearVelocity = Vector3.zero
+                        ball.CFrame = hrp.CFrame * CFrame.new(0, 0, -1)
+                        firetouchinterest(hrp, ball, 0)
+                        firetouchinterest(hrp, ball, 1)
+                    end
+                else
+                    local ball, dist = getClosestBall()
+                    if ball and dist <= reactRange then
+                        lastBall = ball
+                        lastDistance = dist
+                        ball.Velocity = Vector3.zero
+                        ball.AssemblyLinearVelocity = Vector3.zero
+                        ball.CFrame = hrp.CFrame * CFrame.new(0, 0, -1)
+                        firetouchinterest(hrp, ball, 0)
+                        firetouchinterest(hrp, ball, 1)
+                    end
                 end
             end)
         end

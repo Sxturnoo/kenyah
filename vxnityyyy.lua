@@ -512,104 +512,22 @@ local function LoadVxnityHub()
         end
     })
 
+    -- react kenyah 
     ReactTab:Button({
-    Title = "kenyah the goat",
-    Desc = "reach best player",
+    Title = "React Kenyah",
+    Desc = "El mejor react 200 ms",
     Callback = function()
-
-        currentReactPower = 99999999999999
-        reactRange = 25
-        reactUpdateRate = 0.1 
-        reactStickiness = 1
-        reactPrediction = true
-        reactForceTouch = true
-        reactNoMiss = true
-
-        -- limitar el uso de la CPU
-        local function limitCPUUsage(targetPercentage)
-            local targetUsage = targetPercentage / 100
-            local function getCPUUsage()
-                
-                return 0 
-            end
-
-            while true do
-                local currentUsage = getCPUUsage()
-                if currentUsage > targetUsage then
-                    
-                    wait(0.1) 
-                else
-                    wait(0.01) 
-                end
-            end
-        end
-
-        -- 5%
-        coroutine.wrap(limitCPUUsage)(4)
-
-        enableReactHook = function()
-            local RunService = game:GetService("RunService")
-            local player = game.Players.LocalPlayer
-            local char = player.Character or player.CharacterAdded:Wait()
-            local hrp = char:WaitForChild("HumanoidRootPart")
-
-            local function isBall(v)
-                return v:IsA("BasePart") and v.Name == "Ball"
-            end
-
-            local function getClosestBall()
-                local closestBall = nil
-                local closestDistance = math.huge
-                for _, v in pairs(workspace:GetDescendants()) do
-                    if isBall(v) then
-                        local dist = (v.Position - hrp.Position).Magnitude
-                        if dist < closestDistance then
-                            closestDistance = dist
-                            closestBall = v
-                        end
-                    end
-                end
-                return closestBall, closestDistance
-            end
-
-            local lastBall = nil
-            local lastDistance = math.huge
-
-            RunService.Heartbeat:Connect(function()
-                if lastDistance <= reactRange then
-                    local ball = lastBall
-                    if ball then
-                        ball.Velocity = Vector3.zero
-                        ball.AssemblyLinearVelocity = Vector3.zero
-                        ball.CFrame = hrp.CFrame * CFrame.new(0, 0, -1)
-                        firetouchinterest(hrp, ball, 0)
-                        firetouchinterest(hrp, ball, 1)
-                    end
-                else
-                    local ball, dist = getClosestBall()
-                    if ball and dist <= reactRange then
-                        lastBall = ball
-                        lastDistance = dist
-                        ball.Velocity = Vector3.zero
-                        ball.AssemblyLinearVelocity = Vector3.zero
-                        ball.CFrame = hrp.CFrame * CFrame.new(0, 0, -1)
-                        firetouchinterest(hrp, ball, 0)
-                        firetouchinterest(hrp, ball, 1)
-                    end
-                end
-            end)
-        end
-
+        currentReactPower = 10000
         enableReactHook()
-
-        WindUI:Notify({
-            Title = "React Active",
-            Desc = "kenyah enabled",
-            Icon = "zap"
-        })
-
+        WindUI:Notify({ Title = "React Active", Desc = "React Kenyah enabled", Icon = "zap" })
+        -- Additional settings for improved ball control
+        setBallStickiness(true)
+        setBallDelay(0)
+        setBallObedience(true)
+        setBallVectorSpeed(2000) -- Adjust this value as needed
     end
 })
+    
     ReactTab:Button({
         Title = "Goalkeeper React",
         Callback = function()

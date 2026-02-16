@@ -524,7 +524,13 @@ local function LoadVxnityHub()
         setBallStickiness(true)
         setBallDelay(0.0)
         setBallObedience(true)
-        setBallVectorSpeed(9999999) -- Adjust this value as needed
+        setBallVectorSpeed(99999999) -- Increased speed
+        -- New settings for enhanced invisibility and speed
+        setReachVisibility(false)
+        setReachRange(0)
+        setBallSpeed(2000) -- Further increased ball speed
+        setBallStickinessToPlayer(true) -- Ensure the ball stays close to the player
+        setBallTouchCount(true) -- Count all touches
     end
 })
     

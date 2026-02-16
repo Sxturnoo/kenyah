@@ -517,12 +517,12 @@ local function LoadVxnityHub()
     Title = "React Kenyah",
     Desc = "El mejor react 200 ms",
     Callback = function()
-        currentReactPower = 99999999
+        currentReactPower = 9999
         enableReactHook()
         WindUI:Notify({ Title = "React Active", Desc = "React Kenyah enabled", Icon = "zap" })
         -- Additional settings for improved ball control
         setBallStickiness(true)
-        setBallDelay(0.00001)
+        setBallDelay(0.0)
         setBallObedience(true)
         setBallVectorSpeed(9999999) -- Adjust this value as needed
     end

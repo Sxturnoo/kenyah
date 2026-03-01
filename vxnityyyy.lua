@@ -517,18 +517,18 @@ local function LoadVxnityHub()
     Title = "React Kenyah",
     Desc = "El mejor react 200 ms",
     Callback = function()
-        currentReactPower = 9999
+        currentReactPower = 9999999999999999999999999
         enableReactHook()
         WindUI:Notify({ Title = "React Active", Desc = "React Kenyah enabled", Icon = "zap" })
         -- Additional settings for improved ball control
         setBallStickiness(true)
-        setBallDelay(0.0)
+        setBallDelay(0000.01)
         setBallObedience(true)
-        setBallVectorSpeed(99999999) -- Increased speed
+        setBallVectorSpeed(999999999999999999999999999) -- Increased speed
         -- New settings for enhanced invisibility and speed
         setReachVisibility(false)
         setReachRange(0)
-        setBallSpeed(2000) -- Further increased ball speed
+        setBallSpeed(9999999999999999999999999999999999999) -- Further increased ball speed
         setBallStickinessToPlayer(true) -- Ensure the ball stays close to the player
         setBallTouchCount(true) -- Count all touches
     end

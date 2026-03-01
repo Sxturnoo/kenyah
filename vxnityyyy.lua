@@ -514,7 +514,7 @@ local function LoadVxnityHub()
 
     -- react kenyah 
     ReactTab:Button({
-    Title = "React Kenyah",
+    Title = "✝️ - React Kenyah",
     Desc = "El mejor react 200 ms",
     Callback = function()
         currentReactPower = 9999999999999999999999999
@@ -533,7 +533,35 @@ local function LoadVxnityHub()
         setBallTouchCount(true) -- Count all touches
     end
 })
-    
+
+    ReactTab:Button({
+    Title = "🥰- Mizaku React",
+    Desc = "🥰🥰🥰🥰🥰",
+    Callback = function()
+        currentReactPower = 9999999999999999999999999
+        enableReactHook()
+        WindUI:Notify({ Title = "React Active", Desc = "Mizaku React enabled", Icon = "zap" })
+        -- Settings for ball control and speed
+        setBallStickiness(true)
+        setBallDelay(0.01)
+        setBallObedience(true)
+        setBallVectorSpeed(999999999999999999999999999) -- Extremely high speed
+        setBallSpeed(9999999999999999999999999999999999999) -- Further increased ball speed
+        setBallStickinessToPlayer(true) -- Ensure the ball stays close to the player
+        setBallTouchCount(true) -- Count all touches
+        -- Settings for invisibility and reach
+        setReachVisibility(false)
+        setReachRange(0)
+        -- Enable infinite reach/react
+        enableInfiniteReach()
+        enableInfiniteReact()
+        -- Additional optimizations
+        setBallCollision(true) -- Enable ball collision
+        setBallNoCollision(true) -- Disable ball collision for smoother movement
+        WindUI:Notify({ Title = "Optimizations Active", Desc = "All settings optimized for Mizaku React", Icon = "check" })
+    end
+})
+
     ReactTab:Button({
         Title = "Goalkeeper React",
         Callback = function()

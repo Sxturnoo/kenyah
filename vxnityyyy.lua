@@ -701,230 +701,150 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
-HelpersTab:Section({ Title = "?" })
+ HelpersTab:Section({ Title = "Automation" })
 
-local followBall = true
 local toggleEnabled = false
+local helperActive = false
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local Workspace = game:GetService("Workspace")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local PhysicsService = game:GetService("PhysicsService")
 
-local BALL_STICK_DISTANCE = 0.0
-local BALL_FORCE_POWER = 99999
-local DRIBBLE_SPEED = 99999
-local KEEP_BALL_RADIUS = 1.5
-local SNAP_THRESHOLD = 0.3
+-- Config
+local FOLLOW_DISTANCE = 0.01      -- distancia a la que el ball te sigue (sin pegarse)
+local FOLLOW_SPEED = 9999          -- qué tan rápido te sigue
+local DEAD_ZONE = 3.0             -- si está más cerca que esto, no hace nada (no se pega)
+local MAX_DISTANCE = 120           -- si se aleja más de esto, lo jala fuerte
+local STRONG_PULL = 999           -- fuerza cuando se aleja mucho
+local SOFT_PULL = 600             -- fuerza suave cuando está en zona de follow
 
 HelpersTab:Toggle({
     Title = "inf helper",
-    Desc = "[B] Toggle | op dribble",
+    Desc = "[B] Toggle | inf control",
     Callback = function(state)
         toggleEnabled = state
-        if not state then followBall = false end
+        if not state then helperActive = false end
     end
 })
 
 UserInputService.InputBegan:Connect(function(input, gp)
     if input.KeyCode == Enum.KeyCode.B and not gp and toggleEnabled then
-        followBall = not followBall
+        helperActive = not helperActive
     end
 end)
 
--- Fuerza network ownership del ball al cliente local
-local function forceNetworkOwnership(ball)
-    pcall(function()
-        ball:SetNetworkOwner(LocalPlayer)
-    end)
+local function getBall()
+    local tps = Workspace:FindFirstChild("TPSSystem")
+    return tps and tps:FindFirstChild("TPS")
 end
 
--- Elimina todas las fuerzas externas del ball
-local function nukeBallForces(ball)
-    for _, v in ipairs(ball:GetChildren()) do
-        if v:IsA("BodyVelocity") or v:IsA("BodyForce") or
-           v:IsA("BodyPosition") or v:IsA("BodyGyro") or
-           v:IsA("VectorForce") or v:IsA("LinearVelocity") then
-            if v.Name ~= "_helperVF" and v.Name ~= "_helperLV" then
-                pcall(function() v:Destroy() end)
-            end
-        end
-    end
-end
-
--- Attachment reutilizable para no crear uno cada frame
 local function getOrCreateAtt(ball)
-    local att = ball:FindFirstChild("_helperAtt")
+    local att = ball:FindFirstChild("_infAtt")
     if not att then
         att = Instance.new("Attachment")
-        att.Name = "_helperAtt"
+        att.Name = "_infAtt"
         att.Parent = ball
     end
     return att
 end
 
--- LinearVelocity para control preciso (más moderno que AssemblyLinearVelocity)
 local function getOrCreateLV(ball, att)
-    local lv = ball:FindFirstChild("_helperLV")
+    local lv = ball:FindFirstChild("_infLV")
     if not lv then
         lv = Instance.new("LinearVelocity")
-        lv.Name = "_helperLV"
+        lv.Name = "_infLV"
         lv.Attachment0 = att
         lv.MaxForce = math.huge
         lv.RelativeTo = Enum.ActuatorRelativeTo.World
         lv.VelocityConstraintMode = Enum.VelocityConstraintMode.Vector
+        lv.VectorVelocity = Vector3.zero
         lv.Parent = ball
     end
     return lv
 end
 
-local dribbleTick = 0
-local lastBallCFrame = nil
+local function cleanupBall(ball)
+    if not ball then return end
+    pcall(function()
+        local lv = ball:FindFirstChild("_infLV")
+        if lv then lv.VectorVelocity = Vector3.zero end
+    end)
+end
 
-local function snapBallToPlayer(ball, hrp)
-    dribbleTick += 1
+-- Loop principal
+RunService.RenderStepped:Connect(function()
+    if not (helperActive and toggleEnabled) then
+        local ball = getBall()
+        if ball then cleanupBall(ball) end
+        return
+    end
 
-    local lookVec = hrp.CFrame.LookVector
-    local rightVec = hrp.CFrame.RightVector
-    local upVec = hrp.CFrame.UpVector
+    local ball = getBall()
+    local char = LocalPlayer.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    local hum = char and char:FindFirstChild("Humanoid")
 
-    -- Posición objetivo: pegado al frente-abajo del personaje
-    local side = (dribbleTick % 4 < 2) and 0.25 or -0.25
-    local targetPos = hrp.Position
-        + (lookVec * BALL_STICK_DISTANCE)
-        + (rightVec * side)
-        + Vector3.new(0, -1.3, 0)
+    if not (ball and hrp and hum) then return end
+    if hum.Health <= 0 then return end
+    if not ball:IsA("BasePart") then return end
+
+    -- Network ownership para que el servidor acepte nuestros cambios
+    pcall(function() ball:SetNetworkOwner(LocalPlayer) end)
 
     local ballPos = ball.Position
-    local dist = (ballPos - targetPos).Magnitude
+    local hrpPos = hrp.Position
+    local dist = (ballPos - hrpPos).Magnitude
 
-    -- Network ownership cada frame para que el servidor acepte nuestros cambios
-    forceNetworkOwnership(ball)
-
-    -- Limpia fuerzas externas que puedan empujar el ball
-    nukeBallForces(ball)
+    -- Posición objetivo: detrás/lado del jugador a FOLLOW_DISTANCE, no pegado
+    local lookVec = hrp.CFrame.LookVector
+    local targetPos = hrpPos + (lookVec * FOLLOW_DISTANCE) + Vector3.new(0, -0.5, 0)
+    local toTarget = (targetPos - ballPos)
+    local toTargetDist = toTarget.Magnitude
 
     local att = getOrCreateAtt(ball)
     local lv = getOrCreateLV(ball, att)
 
-    if dist > SNAP_THRESHOLD then
-        local direction = (targetPos - ballPos).Unit
-        local speed = math.clamp(dist * BALL_FORCE_POWER, DRIBBLE_SPEED, BALL_FORCE_POWER)
+    if dist > MAX_DISTANCE then
+        -- Ball muy lejos: jala fuerte de vuelta
+        local dir = (targetPos - ballPos).Unit
+        lv.VectorVelocity = dir * STRONG_PULL
+        ball.AssemblyLinearVelocity = dir * STRONG_PULL
 
-        -- LinearVelocity: más preciso y sin jitter vs AssemblyLinearVelocity
-        lv.VectorVelocity = direction * speed
+    elseif dist > DEAD_ZONE then
+        -- Zona de follow: velocidad proporcional a la distancia, suave
+        local dir = toTarget.Unit
+        local speed = math.clamp(toTargetDist * SOFT_PULL, 20, FOLLOW_SPEED)
+        lv.VectorVelocity = dir * speed
 
-        -- Doble seguro: también setea Assembly por si LinearVelocity no aplica
-        ball.AssemblyLinearVelocity = direction * speed
     else
-        -- Ball ya está pegado: frena para que no vibre
+        -- Dead zone: ball cerca, no hacer nada, deja que siga su física
         lv.VectorVelocity = Vector3.zero
-        ball.AssemblyLinearVelocity = Vector3.zero
-        ball.AssemblyAngularVelocity = Vector3.zero
     end
-
-    -- Frena rotación siempre para que el ball se vea controlado
-    ball.AssemblyAngularVelocity = ball.AssemblyAngularVelocity * 0.05
-
-    -- Guarda última posición para predicción
-    lastBallCFrame = ball.CFrame
-end
-
--- Anti-escape: si el ball se teletransporta lejos, lo trae de vuelta instantáneo
-local function antiEscape(ball, hrp)
-    local lookVec = hrp.CFrame.LookVector
-    local targetPos = hrp.Position + (lookVec * BALL_STICK_DISTANCE) + Vector3.new(0, -1.3, 0)
-    local dist = (ball.Position - targetPos).Magnitude
-
-    if dist > KEEP_BALL_RADIUS * 2 then
-        -- Teleport directo si se fue muy lejos (el servidor lo corregiría igual)
-        pcall(function()
-            ball.CFrame = CFrame.new(targetPos)
-            ball.AssemblyLinearVelocity = Vector3.zero
-            ball.AssemblyAngularVelocity = Vector3.zero
-        end)
-    end
-end
-
--- Predice posición del ball 1 frame adelante para compensar latencia
-local function predictiveLock(ball, hrp)
-    if not lastBallCFrame then return end
-    local lookVec = hrp.CFrame.LookVector
-    local predictedTarget = hrp.Position + (lookVec * BALL_STICK_DISTANCE) + Vector3.new(0, -1.3, 0)
-    local currentDist = (ball.Position - predictedTarget).Magnitude
-
-    -- Si en el frame anterior el ball estaba más lejos, aplica corrección predictiva
-    local lastDist = (lastBallCFrame.Position - predictedTarget).Magnitude
-    if lastDist > currentDist + 0.5 then
-        local dir = (predictedTarget - ball.Position).Unit
-        ball.AssemblyLinearVelocity = ball.AssemblyLinearVelocity + (dir * DRIBBLE_SPEED * 0.5)
-    end
-end
-
--- RenderStepped: se ejecuta ANTES del render = 0 delay visual
-RunService.RenderStepped:Connect(function()
-    if not (followBall and toggleEnabled) then return end
-
-    local tpsSystem = Workspace:FindFirstChild("TPSSystem")
-    local ball = tpsSystem and tpsSystem:FindFirstChild("TPS")
-    local playerChar = LocalPlayer.Character
-    local hrp = playerChar and playerChar:FindFirstChild("HumanoidRootPart")
-    local humanoid = playerChar and playerChar:FindFirstChild("Humanoid")
-
-    if not (ball and hrp and humanoid) then return end
-    if humanoid.Health <= 0 then return end
-    if not ball:IsA("BasePart") then return end
-
-    snapBallToPlayer(ball, hrp)
-    predictiveLock(ball, hrp)
 end)
 
--- Heartbeat: segundo loop para cerrar gaps entre frames
+-- Heartbeat: anti-escape backup
 RunService.Heartbeat:Connect(function()
-    if not (followBall and toggleEnabled) then return end
+    if not (helperActive and toggleEnabled) then return end
 
-    local tpsSystem = Workspace:FindFirstChild("TPSSystem")
-    local ball = tpsSystem and tpsSystem:FindFirstChild("TPS")
-    local playerChar = LocalPlayer.Character
-    local hrp = playerChar and playerChar:FindFirstChild("HumanoidRootPart")
-
-    if not (ball and hrp) then return end
-    if not ball:IsA("BasePart") then return end
-
-    antiEscape(ball, hrp)
-
-    -- Re-fuerza network ownership en Heartbeat también
-    pcall(function()
-        ball:SetNetworkOwner(LocalPlayer)
-    end)
-end)
-
--- Stepped: tercer loop, se ejecuta antes de la física
-RunService.Stepped:Connect(function()
-    if not (followBall and toggleEnabled) then return end
-
-    local tpsSystem = Workspace:FindFirstChild("TPSSystem")
-    local ball = tpsSystem and tpsSystem:FindFirstChild("TPS")
-    local playerChar = LocalPlayer.Character
-    local hrp = playerChar and playerChar:FindFirstChild("HumanoidRootPart")
+    local ball = getBall()
+    local char = LocalPlayer.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
 
     if not (ball and hrp) then return end
     if not ball:IsA("BasePart") then return end
 
-    -- Pre-física: posiciona el ball antes de que el motor calcule colisiones
-    local lookVec = hrp.CFrame.LookVector
-    local targetPos = hrp.Position + (lookVec * BALL_STICK_DISTANCE) + Vector3.new(0, -1.3, 0)
-    local dist = (ball.Position - targetPos).Magnitude
+    local dist = (ball.Position - hrp.Position).Magnitude
 
-    if dist > SNAP_THRESHOLD then
+    -- Solo actúa si el ball se escapa demasiado lejos
+    if dist > MAX_DISTANCE * 1.8 then
+        pcall(function() ball:SetNetworkOwner(LocalPlayer) end)
+        local lookVec = hrp.CFrame.LookVector
+        local targetPos = hrp.Position + (lookVec * FOLLOW_DISTANCE) + Vector3.new(0, -0.5, 0)
         local dir = (targetPos - ball.Position).Unit
-        ball.AssemblyLinearVelocity = dir * BALL_FORCE_POWER
+        ball.AssemblyLinearVelocity = dir * STRONG_PULL
     end
 end)
-
-
     local isAimbotEnabled = false
     local aimbotTargetPos = Vector3.new(0, 14, 157)
     local laser = Instance.new("Part")

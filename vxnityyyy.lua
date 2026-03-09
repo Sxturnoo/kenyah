@@ -712,12 +712,12 @@ local LocalPlayer = Players.LocalPlayer
 local Workspace = game:GetService("Workspace")
 
 -- Config
-local FOLLOW_DISTANCE = 0.001      -- distancia a la que el ball te sigue (sin pegarse)
+local FOLLOW_DISTANCE = 0.01      -- distancia a la que el ball te sigue (sin pegarse)
 local FOLLOW_SPEED = 999999          -- qué tan rápido te sigue
-local DEAD_ZONE = 3.0             -- si está más cerca que esto, no hace nada (no se pega)
-local MAX_DISTANCE = 1           -- si se aleja más de esto, lo jala fuerte
-local STRONG_PULL = 9999           -- fuerza cuando se aleja mucho
-local SOFT_PULL = 6000             -- fuerza suave cuando está en zona de follow
+local DEAD_ZONE = 300             -- si está más cerca que esto, no hace nada (no se pega)
+local MAX_DISTANCE = 12000           -- si se aleja más de esto, lo jala fuerte
+local STRONG_PULL = 999           -- fuerza cuando se aleja mucho
+local SOFT_PULL = 6.4             -- fuerza suave cuando está en zona de follow
 
 HelpersTab:Toggle({
     Title = "inf helper",

@@ -845,6 +845,302 @@ RunService.Heartbeat:Connect(function()
         ball.AssemblyLinearVelocity = dir * STRONG_PULL
     end
 end)
+    HelpersTab:Section({ Title = "XDD" })
+
+-- Services
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local LocalPlayer = Players.LocalPlayer
+local Workspace = game:GetService("Workspace")
+
+-- State
+local toggleEnabled = false
+local helperActive = false
+local magnetMode = false       -- Modo imán: ball se pega instantáneamente
+local predictMode = false      -- Modo predicción: anticipa movimiento del jugador
+local multiLockActive = false  -- Bloquea ball en posición fija en el espacio
+
+-- Config avanzada
+local CONFIG = {
+    FOLLOW_DISTANCE  = 0.0000001,
+    FOLLOW_SPEED     = 999999,
+    DEAD_ZONE        = 12,
+    MAX_DISTANCE     = 0.01,
+    STRONG_PULL      = 99999999,
+    SOFT_PULL        = 6000,
+    MAGNET_PULL      = 999999999,   -- fuerza modo imán
+    PREDICT_OFFSET   = 3,           -- cuántos studs adelante predice
+    VERTICAL_OFFSET  = -0.5,        -- altura relativa al HRP
+    LOCK_RADIUS      = 0.001,       -- radio del lock en espacio fijo
+    ANGULAR_KILL     = true,        -- anula rotación del ball
+}
+
+-- UI Toggles
+HelpersTab:Toggle({
+    Title = "Inf Helper",
+    Desc = "[B] Toggle | Control infinito del ball",
+    Callback = function(state)
+        toggleEnabled = state
+        if not state then helperActive = false end
+    end
+})
+
+HelpersTab:Toggle({
+    Title = "Magnet Mode",
+    Desc = "El ball se pega instantáneamente a ti",
+    Callback = function(state)
+        magnetMode = state
+    end
+})
+
+HelpersTab:Toggle({
+    Title = "Predict Mode",
+    Desc = "Anticipa tu movimiento, ball siempre adelante",
+    Callback = function(state)
+        predictMode = state
+    end
+})
+
+HelpersTab:Toggle({
+    Title = "Space Lock",
+    Desc = "Congela el ball en el espacio (posición fija)",
+    Callback = function(state)
+        multiLockActive = state
+    end
+})
+
+HelpersTab:Slider({
+    Title = "Follow Distance",
+    Min = 0,
+    Max = 20,
+    Default = 12,
+    Callback = function(val)
+        CONFIG.DEAD_ZONE = val
+    end
+})
+
+HelpersTab:Slider({
+    Title = "Vertical Offset",
+    Min = -5,
+    Max = 5,
+    Default = -0.5,
+    Callback = function(val)
+        CONFIG.VERTICAL_OFFSET = val
+    end
+})
+
+-- Keybind [B]
+UserInputService.InputBegan:Connect(function(input, gp)
+    if input.KeyCode == Enum.KeyCode.B and not gp and toggleEnabled then
+        helperActive = not helperActive
+    end
+end)
+
+-- Helpers internos
+local function getBall()
+    local tps = Workspace:FindFirstChild("TPSSystem")
+    return tps and tps:FindFirstChild("TPS")
+end
+
+local function getOrCreateAtt(ball)
+    local att = ball:FindFirstChild("_infAtt")
+    if not att then
+        att = Instance.new("Attachment")
+        att.Name = "_infAtt"
+        att.Parent = ball
+    end
+    return att
+end
+
+local function getOrCreateLV(ball, att)
+    local lv = ball:FindFirstChild("_infLV")
+    if not lv then
+        lv = Instance.new("LinearVelocity")
+        lv.Name = "_infLV"
+        lv.Attachment0 = att
+        lv.MaxForce = math.huge
+        lv.RelativeTo = Enum.ActuatorRelativeTo.World
+        lv.VelocityConstraintMode = Enum.VelocityConstraintMode.Vector
+        lv.VectorVelocity = Vector3.zero
+        lv.Parent = ball
+    end
+    return lv
+end
+
+local function getOrCreateAV(ball, att)
+    -- AngularVelocity para matar la rotación del ball
+    local av = ball:FindFirstChild("_infAV")
+    if not av then
+        av = Instance.new("AngularVelocity")
+        av.Name = "_infAV"
+        av.Attachment0 = att
+        av.MaxTorque = math.huge
+        av.RelativeTo = Enum.ActuatorRelativeTo.World
+        av.AngularVelocity = Vector3.zero
+        av.Parent = ball
+    end
+    return av
+end
+
+local function cleanupBall(ball)
+    if not ball then return end
+    pcall(function()
+        local lv = ball:FindFirstChild("_infLV")
+        if lv then lv.VectorVelocity = Vector3.zero end
+        local av = ball:FindFirstChild("_infAV")
+        if av then av.AngularVelocity = Vector3.zero end
+    end)
+end
+
+local lockedPos = nil  -- Para Space Lock
+
+-- Predicción de movimiento
+local lastHRPPos = nil
+local lastTick = tick()
+
+local function getPredictedTarget(hrp)
+    local now = tick()
+    local dt = now - lastTick
+    lastTick = now
+    local currentPos = hrp.Position
+
+    if lastHRPPos and dt > 0 then
+        local velocity = (currentPos - lastHRPPos) / dt
+        lastHRPPos = currentPos
+        -- Target adelante en la dirección de movimiento
+        return currentPos + velocity * CONFIG.PREDICT_OFFSET + Vector3.new(0, CONFIG.VERTICAL_OFFSET, 0)
+    end
+
+    lastHRPPos = currentPos
+    local lookVec = hrp.CFrame.LookVector
+    return currentPos + lookVec * CONFIG.FOLLOW_DISTANCE + Vector3.new(0, CONFIG.VERTICAL_OFFSET, 0)
+end
+
+-- ============================================================
+-- RENDER STEPPED — lógica principal
+-- ============================================================
+RunService.RenderStepped:Connect(function()
+    if not (helperActive and toggleEnabled) then
+        local ball = getBall()
+        if ball then cleanupBall(ball) end
+        lockedPos = nil
+        return
+    end
+
+    local ball = getBall()
+    local char = LocalPlayer.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    local hum = char and char:FindFirstChild("Humanoid")
+
+    if not (ball and hrp and hum) then return end
+    if hum.Health <= 0 then return end
+    if not ball:IsA("BasePart") then return end
+
+    pcall(function() ball:SetNetworkOwner(LocalPlayer) end)
+
+    local ballPos = ball.Position
+    local hrpPos = hrp.Position
+    local dist = (ballPos - hrpPos).Magnitude
+
+    local att = getOrCreateAtt(ball)
+    local lv = getOrCreateLV(ball, att)
+
+    -- Matar rotación si está activo
+    if CONFIG.ANGULAR_KILL then
+        local av = getOrCreateAV(ball, att)
+        av.AngularVelocity = Vector3.zero
+        ball.AssemblyAngularVelocity = Vector3.zero
+    end
+
+    -- ---- SPACE LOCK ----
+    if multiLockActive then
+        if not lockedPos then
+            lockedPos = ballPos  -- congela donde está ahora
+        end
+        local toLock = (lockedPos - ballPos)
+        local lockDist = toLock.Magnitude
+        if lockDist > CONFIG.LOCK_RADIUS then
+            lv.VectorVelocity = toLock.Unit * CONFIG.MAGNET_PULL
+            ball.AssemblyLinearVelocity = toLock.Unit * CONFIG.MAGNET_PULL
+        else
+            lv.VectorVelocity = Vector3.zero
+            ball.AssemblyLinearVelocity = Vector3.zero
+        end
+        return
+    else
+        lockedPos = nil
+    end
+
+    -- ---- Calcular target ----
+    local targetPos
+    if predictMode then
+        targetPos = getPredictedTarget(hrp)
+    else
+        local lookVec = hrp.CFrame.LookVector
+        targetPos = hrpPos + (lookVec * CONFIG.FOLLOW_DISTANCE) + Vector3.new(0, CONFIG.VERTICAL_OFFSET, 0)
+    end
+
+    local toTarget = (targetPos - ballPos)
+    local toTargetDist = toTarget.Magnitude
+
+    -- ---- MAGNET MODE ----
+    if magnetMode then
+        lv.VectorVelocity = toTarget.Unit * CONFIG.MAGNET_PULL
+        ball.AssemblyLinearVelocity = toTarget.Unit * CONFIG.MAGNET_PULL
+        return
+    end
+
+    -- ---- Lógica estándar mejorada ----
+    if dist > CONFIG.MAX_DISTANCE then
+        local dir = (targetPos - ballPos).Unit
+        lv.VectorVelocity = dir * CONFIG.STRONG_PULL
+        ball.AssemblyLinearVelocity = dir * CONFIG.STRONG_PULL
+
+    elseif dist > CONFIG.DEAD_ZONE then
+        local dir = toTarget.Unit
+        local speed = math.clamp(toTargetDist * CONFIG.SOFT_PULL, 20, CONFIG.FOLLOW_SPEED)
+        lv.VectorVelocity = dir * speed
+
+    else
+        lv.VectorVelocity = Vector3.zero
+    end
+end)
+
+-- ============================================================
+-- HEARTBEAT — backup anti-escape
+-- ============================================================
+RunService.Heartbeat:Connect(function()
+    if not (helperActive and toggleEnabled) then return end
+
+    local ball = getBall()
+    local char = LocalPlayer.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+
+    if not (ball and hrp) then return end
+    if not ball:IsA("BasePart") then return end
+
+    -- Space Lock heartbeat
+    if multiLockActive and lockedPos then
+        local d = (ball.Position - lockedPos).Magnitude
+        if d > CONFIG.LOCK_RADIUS then
+            pcall(function() ball:SetNetworkOwner(LocalPlayer) end)
+            ball.AssemblyLinearVelocity = (lockedPos - ball.Position).Unit * CONFIG.MAGNET_PULL
+        end
+        return
+    end
+
+    local dist = (ball.Position - hrp.Position).Magnitude
+
+    if dist > CONFIG.MAX_DISTANCE * 0.8 then
+        pcall(function() ball:SetNetworkOwner(LocalPlayer) end)
+        local lookVec = hrp.CFrame.LookVector
+        local targetPos = hrp.Position + (lookVec * CONFIG.FOLLOW_DISTANCE) + Vector3.new(0, CONFIG.VERTICAL_OFFSET, 0)
+        ball.AssemblyLinearVelocity = (targetPos - ball.Position).Unit * CONFIG.STRONG_PULL
+    end
+end)
+    
     local isAimbotEnabled = false
     local aimbotTargetPos = Vector3.new(0, 14, 157)
     local laser = Instance.new("Part")

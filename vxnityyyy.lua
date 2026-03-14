@@ -522,7 +522,7 @@ local function LoadVxnityHub()
         WindUI:Notify({ Title = "React Active", Desc = "React Kenyah enabled", Icon = "zap" })
         -- Additional settings for improved ball control
         setBallStickiness(true)
-        setBallDelay(0000.01)
+        setBallDelay(0000000000000000000.01)
         setBallObedience(true)
         setBallVectorSpeed(999999999999999999999999999) -- Increased speed
         -- New settings for enhanced invisibility and speed
@@ -533,29 +533,7 @@ local function LoadVxnityHub()
         setBallTouchCount(true) -- Count all touches
     end
 })
- ReactTab:Button({
-    Title = "✝️ - React Kenyah V2",
-    Desc = " ms",
-    Callback = function()
-        currentReactPower = 999999999999999999939393939939399999999999
-        enableReactHook()
-        WindUI:Notify({ Title = "React Active", Desc = "React Kenyah enabled", Icon = "zap" })
-        -- Additional settings for improved ball control
-        setBallStickiness(true)
-        setBallDelay(0000000000000000.01)
-        setBallObedience(true)
-        setBallVectorSpeed(9999999999999999999939939392999999999) -- Increased speed
-        -- New settings for enhanced invisibility and speed
-        setReachVisibility(false)
-        setReachRange(0)
-        setBallSpeed(999999999999999999999999939292929929292929999586868589999999999999) -- Further increased ball speed
-        setBallStickinessToPlayer(true) -- Ensure the ball stays close to the player
-        setBallTouchCount(true) -- Count all touches
-    end
-})
     
-            
-})
     ReactTab:Button({
         Title = "Goalkeeper React",
         Callback = function()

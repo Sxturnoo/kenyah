@@ -533,217 +533,60 @@ local function LoadVxnityHub()
         setBallTouchCount(true) -- Count all touches
     end
 })
-
-    ReactTab:Button({
-    Title = "🥰- Mizaku React",
+ ReactTab:Button({
+    Title = "🥰- testreact",
     Desc = "🥰🥰🥰🥰🥰",
     Callback = function()
         currentReactPower = 9999999999999999999999999
         enableReactHook()
-        WindUI:Notify({ Title = "React Active", Desc = "Mizaku React enabled", Icon = "zap" })
-        -- Settings for ball control and speed
+
         setBallStickiness(true)
-        setBallDelay(0.01)
+        setBallDelay(0)
         setBallObedience(true)
-        setBallVectorSpeed(999999999999999999999999999) -- Extremely high speed
-        setBallSpeed(9999999999999999999999999999999999999) -- Further increased ball speed
-        setBallStickinessToPlayer(true) -- Ensure the ball stays close to the player
-        setBallTouchCount(true) -- Count all touches
-        -- Settings for invisibility and reach
+        setBallVectorSpeed(999999999999999999999999999)
+        setBallSpeed(999999999999999999999999999)
+        setBallStickinessToPlayer(true)
+        setBallTouchCount(true)
+        setBallPingCompensation(true)
+        setBallNetworkPriority(999999999)
+        setBallLocalSimulation(true)
+        setBallPing(10)
+        setBallLatency(0)
+        setBallServerDelay(0)
+        setBallClientPriority(999999999)
+        setBallAntiLag(true)
+        setBallSyncMode("local")
+        setBallPhysicsOwner("local")
+
         setReachVisibility(false)
         setReachRange(0)
-        -- Enable infinite reach/react
+        setReachPerspective(false)
+        setReachOtherClients(false)
+
         enableInfiniteReach()
         enableInfiniteReact()
-        -- Additional optimizations
-        setBallCollision(true) -- Enable ball collision
-        setBallNoCollision(true) -- Disable ball collision for smoother movement
-        WindUI:Notify({ Title = "Optimizations Active", Desc = "All settings optimized for Mizaku React", Icon = "check" })
+        enableAntiPing()
+        enableLocalPhysics()
+        enableInstantTouch()
+        enableZeroPing()
+        enableClientSidePhysics()
+        enableAntiServerCorrection()
+
+        setBallCollision(true)
+        setBallNoCollision(true)
+
+        local touches = 0
+        game:GetService("Workspace").TPSSystem.TPS.Touched:Connect(function(hit)
+            if hit:IsDescendantOf(game:GetService("Players").LocalPlayer.Character or {}) then
+                touches = touches + 1
+            end
+        end)
+
+        WindUI:Notify({ Title = "React v3 Kenyah ON", Desc = "Mizaku React enabled | 10ms ping", Icon = "zap" })
     end
 })
-    ReactTab:Button({
-    Title = "🥰- Mizaku React",
-    Desc = "🥰🥰🥰🥰🥰",
-    Callback = function()
-
-        local Players          = game:GetService("Players")
-        local RunService       = game:GetService("RunService")
-        local Workspace        = game:GetService("Workspace")
-        local NetworkClient    = game:GetService("NetworkClient")
-        local LocalPlayer      = Players.LocalPlayer
-
-        local touches  = 0
-        local active   = true
-
-        local function getBall()
-            local tps = Workspace:FindFirstChild("TPSSystem")
-            return tps and tps:FindFirstChild("TPS")
-        end
-
-        local function getHRP()
-            local c = LocalPlayer.Character
-            return c and c:FindFirstChild("HumanoidRootPart")
-        end
-
-        -- ── ANTI-PING: forzar ownership local en todo momento ──
-        -- Esto hace que el cliente simule el ball localmente
-        -- sin esperar confirmacion del servidor (ignora ping)
-        local function forceOwnership(ball)
-            pcall(function() ball:SetNetworkOwner(LocalPlayer) end)
-            -- Desactivar throttle de physics del cliente
-            pcall(function()
-                local physService = game:GetService("PhysicsService")
-                settings().Physics.PhysicsEnvironmentalThrottle = Enum.EnviromentalPhysicsThrottle.Disabled
-            end)
-        end
-
-        -- ── CONSTRAINTS ──────────────────────────────────────
-        local function setupBall(ball)
-            forceOwnership(ball)
-
-            local att = ball:FindFirstChild("_att") or Instance.new("Attachment", ball)
-            att.Name = "_att"
-
-            -- LinearVelocity: mueve el ball sin esperar servidor
-            local lv = ball:FindFirstChild("_lv") or Instance.new("LinearVelocity", ball)
-            lv.Name                   = "_lv"
-            lv.Attachment0            = att
-            lv.MaxForce               = math.huge
-            lv.RelativeTo             = Enum.ActuatorRelativeTo.World
-            lv.VelocityConstraintMode = Enum.VelocityConstraintMode.Vector
-            lv.VectorVelocity         = Vector3.zero
-
-            -- AngularVelocity: mata spin del ball
-            local av = ball:FindFirstChild("_av") or Instance.new("AngularVelocity", ball)
-            av.Name              = "_av"
-            av.Attachment0       = att
-            av.MaxTorque         = math.huge
-            av.RelativeTo        = Enum.ActuatorRelativeTo.World
-            av.AngularVelocity   = Vector3.zero
-
-            -- AlignPosition: segunda capa anti-ping
-            -- se ejecuta en el cliente sin depender del servidor
-            local ap = ball:FindFirstChild("_ap") or Instance.new("AlignPosition", ball)
-            ap.Name              = "_ap"
-            ap.Attachment0       = att
-            ap.MaxForce          = math.huge
-            ap.MaxVelocity       = math.huge
-            ap.Responsiveness    = 200   -- maxima responsividad
-            ap.RigidityEnabled   = true  -- ignora masa, mueve directo
-            ap.Parent            = ball
-
-            -- AlignOrientation: congela rotacion del ball
-            local ao = ball:FindFirstChild("_ao") or Instance.new("AlignOrientation", ball)
-            ao.Name              = "_ao"
-            ao.Attachment0       = att
-            ao.MaxTorque         = math.huge
-            ao.MaxAngularVelocity = math.huge
-            ao.Responsiveness    = 200
-            ao.RigidityEnabled   = true
-            ao.Parent            = ball
-
-            return lv, av, ap, ao
-        end
-
-        -- ── TOUCH COUNTER ─────────────────────────────────────
-        local ball = getBall()
-        if not ball then
-            WindUI:Notify({ Title = "Error", Desc = "Ball no encontrado", Icon = "x" })
-            return
-        end
-
-        ball.Touched:Connect(function(hit)
-            if not active then return end
-            local c = LocalPlayer.Character
-            if c and hit:IsDescendantOf(c) then
-                touches = touches + 1
-                WindUI:Notify({
-                    Title = "⚽ Touch #" .. touches,
-                    Desc  = "Total toques: " .. touches .. " | React v3 Kenyah",
-                    Icon  = "activity"
-                })
-            end
-        end)
-
-        local lv, av, ap, ao = setupBall(ball)
-
-        -- ── ATTACHMENT AUXILIAR EN HRP (para AlignPosition target) ──
-        local hrp = getHRP()
-        local hrpAtt = hrp and (hrp:FindFirstChild("_kvHrpAtt") or Instance.new("Attachment", hrp))
-        if hrpAtt then
-            hrpAtt.Name   = "_kvHrpAtt"
-            hrpAtt.Parent = hrp
-            -- Offset: delante del jugador, pegado
-            hrpAtt.CFrame = CFrame.new(0, -0.3, 1.2)
-            ap.Attachment1 = hrpAtt
-            ao.Attachment1 = hrpAtt
-        end
-
-        -- ── RENDERSTEP: velocidad maxima, ignora ping ──────────
-        RunService.RenderStepped:Connect(function()
-            if not active then return end
-
-            local b = getBall()
-            local h = getHRP()
-            if not (b and h) then return end
-
-            -- Re-forzar ownership cada frame = 0ms de latencia cliente
-            forceOwnership(b)
-
-            local target = h.CFrame:PointToWorldSpace(Vector3.new(0, -0.3, 1.2))
-            local delta  = target - b.Position
-            local dist   = delta.Magnitude
-
-            -- Actualizar target del AlignPosition en tiempo real
-            if hrpAtt then
-                hrpAtt.WorldCFrame = CFrame.new(target)
-            end
-
-            if dist > 0.005 then
-                -- Doble capa: LinearVelocity + AssemblyLinearVelocity
-                -- AssemblyLinearVelocity bypasea physics del servidor
-                local spd = math.clamp(dist * 99999999, 100, 99999999)
-                local vel = delta.Unit * spd
-                lv.VectorVelocity           = vel
-                b.AssemblyLinearVelocity    = vel
-            else
-                lv.VectorVelocity           = Vector3.zero
-                b.AssemblyLinearVelocity    = Vector3.zero
-            end
-
-            -- Matar rotacion siempre
-            av.AngularVelocity           = Vector3.zero
-            b.AssemblyAngularVelocity    = Vector3.zero
-        end)
-
-        -- ── HEARTBEAT: backup anti-escape + anti-ping secundario ──
-        RunService.Heartbeat:Connect(function(dt)
-            if not active then return end
-
-            local b = getBall()
-            local h = getHRP()
-            if not (b and h) then return end
-
-            local target = h.CFrame:PointToWorldSpace(Vector3.new(0, -0.3, 1.2))
-            local dist   = (b.Position - target).Magnitude
-
-            -- Si el servidor intenta mover el ball (por ping/lag),
-            -- lo corregimos en el mismo heartbeat frame
-            if dist > 0.3 then
-                forceOwnership(b)
-                b.AssemblyLinearVelocity  = (target - b.Position).Unit * 999999999
-                b.CFrame                  = CFrame.new(b.Position)  -- reset CFrame sin teleport
-            end
-
-            -- Cada 5 frames re-setear constraints por si el servidor los destruye
-            if math.random(1, 5) == 1 then
-                setupBall(b)
-            end
-        end)
-
-        WindUI:Notify({ Title = "⚡ React v3 Kenyah ON", Desc = "Kenyah React activado — 0 ping local", Icon = "zap" })
-        WindUI:Notify({ Title = "✅ All Systems ON", Desc = "$- Premium react Enabled.", Icon = "check" })
-    end
+    
+            
 })
     ReactTab:Button({
         Title = "Goalkeeper React",

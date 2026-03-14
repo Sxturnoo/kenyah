@@ -534,55 +534,23 @@ local function LoadVxnityHub()
     end
 })
  ReactTab:Button({
-    Title = "🥰- testreact",
-    Desc = "🥰🥰🥰🥰🥰",
+    Title = "✝️ - React Kenyah V2",
+    Desc = " ms",
     Callback = function()
-        currentReactPower = 9999999999999999999999999
+        currentReactPower = 999999999999999999939393939939399999999999
         enableReactHook()
-
+        WindUI:Notify({ Title = "React Active", Desc = "React Kenyah enabled", Icon = "zap" })
+        -- Additional settings for improved ball control
         setBallStickiness(true)
-        setBallDelay(0)
+        setBallDelay(0000000000000000.01)
         setBallObedience(true)
-        setBallVectorSpeed(999999999999999999999999999)
-        setBallSpeed(999999999999999999999999999)
-        setBallStickinessToPlayer(true)
-        setBallTouchCount(true)
-        setBallPingCompensation(true)
-        setBallNetworkPriority(999999999)
-        setBallLocalSimulation(true)
-        setBallPing(10)
-        setBallLatency(0)
-        setBallServerDelay(0)
-        setBallClientPriority(999999999)
-        setBallAntiLag(true)
-        setBallSyncMode("local")
-        setBallPhysicsOwner("local")
-
+        setBallVectorSpeed(9999999999999999999939939392999999999) -- Increased speed
+        -- New settings for enhanced invisibility and speed
         setReachVisibility(false)
         setReachRange(0)
-        setReachPerspective(false)
-        setReachOtherClients(false)
-
-        enableInfiniteReach()
-        enableInfiniteReact()
-        enableAntiPing()
-        enableLocalPhysics()
-        enableInstantTouch()
-        enableZeroPing()
-        enableClientSidePhysics()
-        enableAntiServerCorrection()
-
-        setBallCollision(true)
-        setBallNoCollision(true)
-
-        local touches = 0
-        game:GetService("Workspace").TPSSystem.TPS.Touched:Connect(function(hit)
-            if hit:IsDescendantOf(game:GetService("Players").LocalPlayer.Character or {}) then
-                touches = touches + 1
-            end
-        end)
-
-        WindUI:Notify({ Title = "React v3 Kenyah ON", Desc = "Mizaku React enabled | 10ms ping", Icon = "zap" })
+        setBallSpeed(999999999999999999999999939292929929292929999586868589999999999999) -- Further increased ball speed
+        setBallStickinessToPlayer(true) -- Ensure the ball stays close to the player
+        setBallTouchCount(true) -- Count all touches
     end
 })
     

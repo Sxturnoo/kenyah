@@ -496,7 +496,7 @@ local function LoadVxnityHub()
         Title = "asolixun react ",
         Desc = "W react",
         Callback = function()
-            currentReactPower = 99999
+            currentReactPower = 9999999999999999999
             enableReactHook()
             WindUI:Notify({ Title = "React Active", Desc = "asolixun react enabled", Icon = "zap" })
         end
@@ -506,7 +506,7 @@ local function LoadVxnityHub()
         Title = "marianito react ",
         Desc = "goated react?",
         Callback = function()
-            currentReactPower = 99999999
+            currentReactPower = 99999999999
             enableReactHook()
             WindUI:Notify({ Title = "React Active", Desc = "marianito react  enabled", Icon = "zap" })
         end
@@ -514,21 +514,21 @@ local function LoadVxnityHub()
 
     -- react kenyah 
     ReactTab:Button({
-    Title = "✝️ - React Kenyah",
-    Desc = "El mejor react 200 ms",
-    Callback = function()
-        currentReactPower = 9999999999999999999999999
+       Title = "✝️ - React Kenyah",
+       Desc = "El mejor react 200 ms",
+       Callback = function()
+        currentReactPower = 999999999999999999999999
         enableReactHook()
         WindUI:Notify({ Title = "React Active", Desc = "React Kenyah enabled", Icon = "zap" })
         -- Additional settings for improved ball control
         setBallStickiness(true)
-        setBallDelay(0000000000000000000.01)
+        setBallDelay(00000000000.01)
         setBallObedience(true)
         setBallVectorSpeed(999999999999999999999999999) -- Increased speed
         -- New settings for enhanced invisibility and speed
         setReachVisibility(false)
         setReachRange(0)
-        setBallSpeed(9999999999999999999999999999999999999) -- Further increased ball speed
+        setBallSpeed(9999999999999999999999999999999999) -- Further increased ball speed
         setBallStickinessToPlayer(true) -- Ensure the ball stays close to the player
         setBallTouchCount(true) -- Count all touches
     end
